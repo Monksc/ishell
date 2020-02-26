@@ -1,0 +1,9 @@
+.git
+.git/*
+*.swp
+*.out
+*.out.*
+*.s
+output
+output.c
+test.c
