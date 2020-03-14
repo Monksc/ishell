@@ -17,6 +17,8 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include <util.h>
+
 typedef enum {false, true} bool;
 
 /* reads from keypress, doesn't echo */
@@ -37,7 +39,8 @@ int lines_count;
 int lines_allocated;
 int prevLineIndex;
 
-int pipes[2];
+// int pipes[2];
+int masterfd;
 
 void storeLines(const char* filename) {
 
@@ -244,13 +247,24 @@ bool runProgram(const char * program_name, char * arguments[]) {
     if (path == NULL) return false;
     printf("GOT PATH: |%s|\n", path);
 
-    pipe(pipes);
+    struct winsize win = {
+        .ws_col = 80, .ws_row = 24,
+        .ws_xpixel = 480, .ws_ypixel = 192,
+    };
 
-    if (fork() == 0) {
-        dup2(pipes[0], 0);
+    int outputfd = dup(1);
+    int pid = forkpty(&masterfd, NULL, NULL, &win);
+    printf("FORK: %d\n", pid);
+    if (pid == 0) {
+        //dup2(pipes[0], 0);
+        //close(pipes[1]);
+        dup2(outputfd, 1);
         execv(path, arguments);
         exit(1);
     }
+
+    // mayber line below
+    close(outputfd);
 
     free(path);
 
@@ -259,8 +273,8 @@ bool runProgram(const char * program_name, char * arguments[]) {
 
 int main(int argc, char * argv[]) {
 
-    // setvbuf(stdin, NULL, _IONBF, 0);
-    // setbuf(stdin,NULL);
+    //setvbuf(stdin, NULL, _IONBF, 0);
+    setbuf(stdin,NULL);
    
     if (argc < 2) {
         fprintf(stderr, "ERROR: Incorrect usage. Usage: <%s> <program> [arguments]\n",
@@ -290,7 +304,8 @@ int main(int argc, char * argv[]) {
             if (strcmp("exit", line) == 0) {
                 break;
             }
-            dprintf(pipes[1], "%s\n", line);
+            // dprintf(pipes[1], "%s\n", line);
+            dprintf(masterfd, "%s\n", line);
 
             saveline(line);
             printf("\n");
@@ -302,7 +317,8 @@ int main(int argc, char * argv[]) {
         // clear screen
         else if (c == 12) {
             printf("%c%c%c%c%c%c%c", 27, 91, 72, 27, 91, 50, 74);
-            dprintf(pipes[1], "\n");
+            //dprintf(pipes[1], "\n");
+            dprintf(masterfd, "\n");
         }
         // CTRL P
         else if (c == 16) {
