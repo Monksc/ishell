@@ -254,6 +254,7 @@ bool runProgram(const char * program_name, char * arguments[]) {
     int pid = forkpty(&masterfd, NULL, NULL, &win);
     if (pid == 0) {
         dup2(outputfd, 1);
+        dup2(outputfd, 2);
         execv(path, arguments);
         exit(1);
     }
