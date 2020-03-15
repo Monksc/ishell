@@ -54,7 +54,6 @@ void storeLines(const char* filename) {
     strcat(filepath, filename);
 
     FILE* file = fopen(filepath, "a");
-    printf("%s : %s\n", filepath, file == NULL ? "NULL" : "OK");
 
     for (int i = 0; i < lines_count; i++) {
         if (lines[i] ==  NULL) continue;
@@ -245,7 +244,6 @@ bool runProgram(const char * program_name, char * arguments[]) {
 
     char * path = getPathOfProgram(program_name);
     if (path == NULL) return false;
-    printf("GOT PATH: |%s|\n", path);
 
     struct winsize win = {
         .ws_col = 80, .ws_row = 24,
@@ -254,16 +252,12 @@ bool runProgram(const char * program_name, char * arguments[]) {
 
     int outputfd = dup(1);
     int pid = forkpty(&masterfd, NULL, NULL, &win);
-    printf("FORK: %d\n", pid);
     if (pid == 0) {
-        //dup2(pipes[0], 0);
-        //close(pipes[1]);
         dup2(outputfd, 1);
         execv(path, arguments);
         exit(1);
     }
 
-    // mayber line below
     close(outputfd);
 
     free(path);
@@ -304,7 +298,6 @@ int main(int argc, char * argv[]) {
             if (strcmp("exit", line) == 0) {
                 break;
             }
-            // dprintf(pipes[1], "%s\n", line);
             dprintf(masterfd, "%s\n", line);
 
             saveline(line);
@@ -317,7 +310,6 @@ int main(int argc, char * argv[]) {
         // clear screen
         else if (c == 12) {
             printf("%c%c%c%c%c%c%c", 27, 91, 72, 27, 91, 50, 74);
-            //dprintf(pipes[1], "\n");
             dprintf(masterfd, "\n");
         }
         // CTRL P
@@ -375,8 +367,6 @@ int main(int argc, char * argv[]) {
         }
 
     }
-
-    printf("FINISHED\n");
 
     free(line);
     storeLines(argv[1]);
