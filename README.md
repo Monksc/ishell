@@ -18,12 +18,12 @@ ishell <bad shell> <arguments>
 
 # Example 1
 ```
-./a.out mips
+ishell mips
 ```
 
 # Example 2
 ```
-./a.out jdb ClassFile
+ishell jdb ClassFile
 ```
 
 # Uninstall
